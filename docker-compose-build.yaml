@@ -1,22 +1,39 @@
 version: "3.8"
 
 services:
-  free5gc-upf:
-    container_name: upf
+  free5gc-upf-embb:
+    container_name: upf-embb
     build:
       context: ./nf_upf
       args:
         DEBUG_TOOLS: "false"
     command: bash -c "./upf-iptables.sh && ./upf -c ./config/upfcfg.yaml"
     volumes:
-      - ./config/upfcfg.yaml:/free5gc/config/upfcfg.yaml
+      - ./config/upfcfg-embb.yaml:/free5gc/config/upfcfg.yaml
       - ./config/upf-iptables.sh:/free5gc/upf-iptables.sh
     cap_add:
       - NET_ADMIN
     networks:
       privnet:
         aliases:
-          - upf.free5gc.org
+          - upf-embb.free5gc.org
+
+  free5gc-upf-urllc:
+    container_name: upf-urllc
+    build:
+      context: ./nf_upf
+      args:
+        DEBUG_TOOLS: "false"
+    command: bash -c "./upf-iptables.sh && ./upf -c ./config/upfcfg.yaml"
+    volumes:
+      - ./config/upfcfg-urllc.yaml:/free5gc/config/upfcfg.yaml
+      - ./config/upf-iptables.sh:/free5gc/upf-iptables.sh
+    cap_add:
+      - NET_ADMIN
+    networks:
+      privnet:
+        aliases:
+          - upf-urllc.free5gc.org
 
   db:
     container_name: mongodb
@@ -159,7 +176,8 @@ services:
           - smf.free5gc.org
     depends_on:
       - free5gc-nrf
-      - free5gc-upf
+      - free5gc-upf-embb
+      - free5gc-upf-urllc
 
   free5gc-udm:
     container_name: udm
@@ -253,27 +271,8 @@ services:
     depends_on:
       - free5gc-amf
       - free5gc-smf
-      - free5gc-upf
-
-  free5gc-tngf:
-    container_name: tngf
-    build:
-      context: ./nf_tngf
-      args:
-        DEBUG_TOOLS: "false"
-    command: ./tngf -c ./config/tngfcfg.yaml
-    volumes:
-      - ./config/tngfcfg.yaml:/free5gc/config/tngfcfg.yaml
-      - ./cert:/free5gc/cert
-    environment:
-      GIN_MODE: release
-    cap_add:
-      - NET_ADMIN
-    network_mode: host
-    depends_on:
-      - free5gc-amf
-      - free5gc-smf
-      - free5gc-upf
+      - free5gc-upf-embb
+      - free5gc-upf-urllc
 
   free5gc-nef:
     container_name: nef
@@ -338,7 +337,8 @@ services:
           - gnb.free5gc.org
     depends_on:
       - free5gc-amf
-      - free5gc-upf
+      - free5gc-upf-embb
+      - free5gc-upf-urllc
 
   n3iwue:
     container_name: n3iwue
